@@ -1,17 +1,95 @@
-// 测试token是否成功注入
-import { request } from '@/utils'
+import { Layout, Menu, Popconfirm } from 'antd'
 import { useEffect } from 'react'
-const Layout = () => {
+import { useDispatch, useSelector } from 'react-redux'
+import {
+  HomeOutlined,
+  DiffOutlined,
+  EditOutlined,
+  LogoutOutlined,
+} from '@ant-design/icons'
+import './index.scss'
+import { Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { fetchUserInfo, clearUserInfo } from '@/store/modules/user'
+
+const { Header, Sider } = Layout
+
+const items = [
+  {
+    label: '首页',
+    key: '/',
+    icon: <HomeOutlined />,
+  },
+  {
+    label: '文章管理',
+    key: '/article',
+    icon: <DiffOutlined />,
+  },
+  {
+    label: '发布文章',
+    key: '/publish',
+    icon: <EditOutlined />,
+  },
+]
+
+const GeekLayout = () => {
+  const navigate = useNavigate()
+  const onMenuClick = (route) => {
+    console.log('跳转', route)
+    const path = route.key
+    navigate(path)
+  }
+
+  // 反向高亮
+  const location = useLocation()
+  const selectedKey = location.pathname
+  console.log('当前路径', selectedKey)
+
+  // 触发个人信息获取
+  const dispatch = useDispatch()
   useEffect(() => {
-    request.get('/user/profile').then(res => {
-      console.log(res)
-    })
-  }, [])
+    dispatch(fetchUserInfo())
+  }, [dispatch])
+
+  const uname = useSelector(state => state.user.userInfo.name)
+
+  // 退出登录
+  const onConfirm = () => {
+    // 1. 清空本地存储
+    dispatch(clearUserInfo())
+    // 2. 跳转登录页
+    navigate('/login')
+  }
+
   return (
-    <div>
-      this is layout
-    </div>
+    <Layout>
+      <Header className="header">
+        <div className="logo" />
+        <div className="user-info">
+          <span className="user-name">{uname}</span>
+          <span className="user-logout">
+            <Popconfirm title="是否确认退出？" okText="退出" cancelText="取消" onConfirm={onConfirm}>
+              <LogoutOutlined /> 退出
+            </Popconfirm>
+          </span>
+        </div>
+      </Header>
+      <Layout>
+        <Sider width={200} className="site-layout-background">
+          <Menu
+            mode="inline"
+            theme="dark"
+            /* 使用 selectedKeys 实现受控高亮 */
+            selectedKeys={[selectedKey]}
+            onClick={onMenuClick}
+            items={items}
+            style={{ height: '100%', borderRight: 0 }}></Menu>
+        </Sider>
+        <Layout className="layout-content" style={{ padding: 20 }}>
+          {/* 二级路由出口 */}
+          <Outlet />
+        </Layout>
+      </Layout>
+    </Layout>
   )
 }
-
-export default Layout
+export default GeekLayout
